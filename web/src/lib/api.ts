@@ -1,93 +1,27 @@
+import type { components } from "@/lib/api-types";
+
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000").replace(/\/$/, "");
 
-export type Student = {
-  age: number;
-  gender: string;
-  study_hours_per_day: number;
-  social_media_hours: number;
-  netflix_hours: number;
-  part_time_job: string;
-  attendance_percentage: number;
-  sleep_hours: number;
-  diet_quality: string;
-  exercise_frequency: number;
-  parental_education_level: string;
-  internet_quality: string;
-  mental_health_rating: number;
-  extracurricular_participation: string;
-};
+// These shapes come from the API's OpenAPI file (api/openapi.json), through src/lib/api-types.ts.
+// Do not edit them by hand. After changing an endpoint or a model in the API, run
+// `python -m api.export_openapi` (project root) and then `npm run gen:api` (this folder).
+type Schemas = components["schemas"];
 
+export type Student = Schemas["Student"];
 export type FeatureName = keyof Student;
+export type NumericSpec = Schemas["NumericSpec"];
+export type CategoricalSpec = Schemas["CategoricalSpec"];
+export type Interval = Schemas["Interval"];
+export type Meta = Schemas["MetaResponse"];
+export type Tip = Schemas["Tip"];
+export type Prediction = Schemas["PredictResponse"];
+export type WhatIfResult = Schemas["WhatIfResponse"];
+export type Insights = Schemas["InsightsResponse"];
 
-export type NumericSpec = {
-  label: string;
-  unit: string;
-  integer: boolean;
-  step: number;
-  min: number;
-  max: number;
-  median: number;
-};
-
-export type CategoricalSpec = { label: string; options: string[] };
-
-export type Interval = { low: number; high: number; level: number };
-
-export type Meta = {
-  model: {
-    name: string | null;
-    tuned: boolean | null;
-    trained_at: string | null;
-    test_metrics: { rmse: number; r2: number; interval_coverage: number } | null;
-    interval: { level: number; half_width: number } | null;
-    sklearn_version_matches: boolean;
-  };
-  features: FeatureName[];
-  numeric: Record<string, NumericSpec>;
-  categorical: Record<string, CategoricalSpec>;
-  habits: { feature: FeatureName; label: string }[];
-  diet_order: string[];
-  max_batch_rows: number;
-};
-
-export type Tip = {
-  feature: FeatureName;
-  label: string;
-  current: number | string;
-  suggested: number | string;
-  unit: string;
-  gain: number;
-};
-
-export type Prediction = {
-  score: number;
-  interval: Interval | null;
-  edge_features: FeatureName[];
-  tips: Tip[];
-};
-
-export type WhatIfResult = {
-  base_score: number;
-  new_score: number;
-  delta: number;
-  interval: Interval | null;
-};
-
-export type BatchResult = {
-  columns: string[];
+// A cell of an uploaded CSV can be text, a number or empty. The API documents the row values as
+// unknown, so this is the one shape kept here.
+export type BatchResult = Omit<Schemas["BatchResponse"], "rows"> & {
   rows: Record<string, string | number | null>[];
-  summary: { count: number; mean_score: number; below_50: number };
-  warnings: string[];
-};
-
-export type Insights = {
-  count: number;
-  summary: { mean: number; median: number; std: number; min: number; max: number };
-  histogram: { start: number; end: number; count: number }[];
-  correlations: { feature: string; label: string; r: number }[];
-  category_means: Record<string, { value: string; mean: number; count: number }[]>;
-  scatter: Record<string, { x: number; y: number }[]>;
-  predicted_vs_actual: { actual: number; predicted: number }[];
 };
 
 /** Error from the API. `messages` holds every validation message the server sent. */

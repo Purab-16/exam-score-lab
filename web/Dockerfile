@@ -12,8 +12,18 @@ FROM node:22-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# public/ holds static files (images, robots.txt). Git does not track an empty folder, so create it
+# here: the final stage copies it, and a fresh clone without public/ must still build.
+RUN mkdir -p public
 ARG NEXT_PUBLIC_API_URL=http://localhost:8000
+# Security header settings, read when the app is built (see next.config.ts). Empty means the default.
+ARG WEB_SECURITY_HEADERS=
+ARG CSP_MODE=
+ARG HSTS_MAX_AGE=
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+    WEB_SECURITY_HEADERS=$WEB_SECURITY_HEADERS \
+    CSP_MODE=$CSP_MODE \
+    HSTS_MAX_AGE=$HSTS_MAX_AGE \
     NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
@@ -23,6 +33,11 @@ ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
     HOSTNAME=0.0.0.0
+
+# The app only runs `node server.js`. npm, npx and yarn come with the base image, are not needed at run
+# time, and the libraries bundled inside npm were flagged by security scanners (11 HIGH findings).
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
+ && rm -rf /opt/yarn-* /usr/local/bin/yarn /usr/local/bin/yarnpkg
 
 # The standalone server does not serve public/ or .next/static unless they are copied next to it
 COPY --from=build --chown=node:node /app/.next/standalone ./

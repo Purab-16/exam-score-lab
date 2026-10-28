@@ -1,6 +1,12 @@
 # Run the API and the web app together:
 #   docker compose up --build
-# Web: http://localhost:3000   API: http://localhost:8000/docs
+# Web: http://localhost:3000   API: http://localhost:8000
+# (API docs: API_ENV=development docker compose up --build, then http://localhost:8000/docs)
+#
+# Behind an nginx reverse proxy instead: see docker-compose.proxy.yml
+#
+# Both containers run as a normal user, with a read-only file system, no extra Linux capabilities
+# and limits on memory and processes. Only /tmp (and Next.js's cache) can be written, in memory.
 
 services:
   api:
@@ -12,7 +18,18 @@ services:
     environment:
       # Browser origins allowed to call the API
       API_CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+      # production hides the /docs pages. Run `API_ENV=development docker compose up` to see them.
+      API_ENV: ${API_ENV:-production}
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m   # an uploaded CSV file is kept here while it is read
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    pids_limit: 200
 
   web:
     build:
@@ -20,9 +37,24 @@ services:
       args:
         # The browser calls the API directly, so this is the host-side URL
         NEXT_PUBLIC_API_URL: http://localhost:8000
+        # Security header settings, read when the image is built. Empty uses the default.
+        # Example: CSP_MODE=report-only docker compose up --build
+        CSP_MODE: ${CSP_MODE:-}
+        WEB_SECURITY_HEADERS: ${WEB_SECURITY_HEADERS:-}
+        HSTS_MAX_AGE: ${HSTS_MAX_AGE:-}
     ports:
       - "3000:3000"
     depends_on:
       api:
         condition: service_healthy
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m
+      - /app/.next/cache:uid=1000,gid=1000,size=64m   # Next.js cache, owned by the user the app runs as
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    pids_limit: 200

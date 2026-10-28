@@ -1,4 +1,4 @@
-"""Prediction logic behind the API: input ranges, what-if, tips, SHAP contributions, batch validation."""
+"""Prediction logic behind the API: input ranges, what-if, tips, per-feature contributions, batch validation."""
 import numpy as np
 import pandas as pd
 
@@ -68,22 +68,35 @@ def what_if(model, row, changes):
 
 
 def shap_by_feature(values, transformed_names):
-    """Sum SHAP values of transformed columns (e.g. one-hot levels) back to the original feature."""
+    """Sum the contributions of transformed columns (e.g. one-hot levels) back to the original feature."""
     totals = {}
-    for value, name in zip(values, transformed_names):
+    for value, name in zip(values, transformed_names, strict=True):
         raw = name.split("__", 1)[-1]
         feature = next((c for c in CATEGORICAL_FEATURES if raw.startswith(c + "_")), raw)
         totals[feature] = totals.get(feature, 0.0) + float(value)
     return totals
 
 
-def build_explainer(model, data):
-    """SHAP explainer for the model's final estimator, plus what is needed to explain new rows."""
-    import shap
+EXPLAINER_METHODS = ("auto", "shap")
 
-    preprocessor = model[:-1]
-    estimator = model.named_steps["regressor"]
-    background = preprocessor.transform(data[FEATURES])
+
+def _dense(matrix):
+    return matrix.toarray() if hasattr(matrix, "toarray") else np.asarray(matrix)
+
+
+def _is_linear(estimator):
+    return np.ndim(getattr(estimator, "coef_", None)) == 1
+
+
+def _shap_explainer(estimator, background):
+    """A function that explains rows with SHAP. Needs the optional `shap` package."""
+    try:
+        import shap
+    except ImportError as error:
+        raise RuntimeError(
+            "Explaining this model needs the 'shap' package. Install it (pip install shap) and, for the "
+            "API image, add it to requirements-api.txt."
+        ) from error
 
     if (hasattr(estimator, "tree_") or hasattr(estimator, "estimators_")
             or hasattr(estimator, "get_booster") or hasattr(estimator, "booster_")):
@@ -92,15 +105,41 @@ def build_explainer(model, data):
         explainer = shap.LinearExplainer(estimator, background)
     else:
         explainer = shap.Explainer(estimator, background)
-
-    return {"preprocessor": preprocessor, "explainer": explainer,
-            "names": list(preprocessor.get_feature_names_out())}
+    return lambda matrix: np.asarray(explainer(matrix).values)
 
 
-def contributions_for(shap_ctx, row):
-    """SHAP value per original feature for a one-row DataFrame."""
-    values = shap_ctx["explainer"](shap_ctx["preprocessor"].transform(row[FEATURES])).values[0]
-    return shap_by_feature(values, shap_ctx["names"])
+def build_explainer(model, data, method="auto"):
+    """Prepare to explain one prediction as a contribution per input column.
+
+    A contribution says how much a column moved this student's score compared with the average student.
+
+    method "auto" (default): a linear model uses the exact formula `coefficient * (value - average value)`.
+    That equals SHAP's linear explainer over all training rows, and needs no extra package. Other models
+    use SHAP, which must be installed.
+    method "shap": always use SHAP.
+    """
+    if method not in EXPLAINER_METHODS:
+        raise ValueError(f"method must be one of {EXPLAINER_METHODS}, got {method!r}")
+
+    preprocessor = model[:-1]
+    estimator = model.named_steps["regressor"]
+    names = list(preprocessor.get_feature_names_out())
+    background = _dense(preprocessor.transform(data[FEATURES]))
+
+    if method == "auto" and _is_linear(estimator):
+        coefficients = np.asarray(estimator.coef_, dtype=float)
+        average = background.mean(axis=0)
+        return {"preprocessor": preprocessor, "names": names, "method": "linear",
+                "explain": lambda matrix: coefficients * (_dense(matrix) - average)}
+
+    return {"preprocessor": preprocessor, "names": names, "method": "shap",
+            "explain": _shap_explainer(estimator, background)}
+
+
+def contributions_for(explainer, row):
+    """Contribution per original feature for a one-row DataFrame (see build_explainer)."""
+    matrix = explainer["preprocessor"].transform(row[FEATURES])
+    return shap_by_feature(np.asarray(explainer["explain"](matrix))[0], explainer["names"])
 
 
 def _suggested_value(col, current, ranges):
@@ -121,9 +160,9 @@ def _suggested_value(col, current, ranges):
 
 
 def suggest_tips(model, row, contributions, ranges, top_n=3):
-    """Habits that pull the score down (negative SHAP), with a suggested change and its predicted gain.
+    """Habits that pull the score down (negative contribution), with a suggested change and its predicted gain.
 
-    `contributions` maps original feature name to its SHAP value (see shap_by_feature).
+    `contributions` maps original feature name to its contribution (see contributions_for).
     """
     base_score = what_if(model, row, {})
     tips = []
@@ -139,7 +178,7 @@ def suggest_tips(model, row, contributions, ranges, top_n=3):
         if gain > 0:
             tips.append({
                 "feature": col, "label": cfg["label"], "current": current, "suggested": target,
-                "unit": cfg["unit"], "gain": gain, "shap": contributions[col],
+                "unit": cfg["unit"], "gain": gain, "contribution": contributions[col],
             })
 
     diet = row["diet_quality"].iloc[0]
@@ -150,7 +189,7 @@ def suggest_tips(model, row, contributions, ranges, top_n=3):
             tips.append({
                 "feature": "diet_quality", "label": f"Improve diet from {diet} to {better}",
                 "current": diet, "suggested": better, "unit": "", "gain": gain,
-                "shap": contributions["diet_quality"],
+                "contribution": contributions["diet_quality"],
             })
 
     return sorted(tips, key=lambda t: t["gain"], reverse=True)[:top_n]

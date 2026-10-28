@@ -1,5 +1,10 @@
 import json
+import os
 from pathlib import Path
+
+# The shared app in api.main is used by many tests. Without this, the per-client rate limit would
+# make a long test run fail. Rate limiting has its own tests, which build their own app.
+os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 
 import joblib
 import pandas as pd

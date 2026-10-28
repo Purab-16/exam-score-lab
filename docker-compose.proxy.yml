@@ -1,0 +1,60 @@
+# The web app and the API behind an nginx reverse proxy.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.proxy.yml up --build
+#
+# Open http://localhost:8080. The API is at http://localhost:8080/api/ (for example /api/health).
+# The API and web ports are NOT published: every request goes through nginx and its limits.
+#
+# Back to the direct setup (ports 3000 and 8000):
+#   docker compose down
+#   docker compose up --build
+#
+# Tip: set COMPOSE_FILE=docker-compose.yml:docker-compose.proxy.yml once and use plain `docker compose`.
+# nginx settings: nginx/default.conf. TLS template and notes: nginx/README.md.
+
+services:
+  api:
+    ports: !reset []
+    environment:
+      # The API only receives traffic from nginx (nothing else can reach it), so it can trust the
+      # client address nginx forwards. Without this every client would look like nginx to the rate limit.
+      FORWARDED_ALLOW_IPS: "*"
+
+  web:
+    # A separate image name, so the direct setup and this one do not overwrite each other
+    image: mlproject-web-proxy
+    ports: !reset []
+    build:
+      args:
+        # Same address as the page, so the browser makes no cross-origin request
+        NEXT_PUBLIC_API_URL: /api
+
+  proxy:
+    build:
+      context: ./nginx
+    image: mlproject-proxy
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/proxy-api.inc:/etc/nginx/proxy-api.inc:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/nginx-health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m   # nginx process id, temporary files and the cache
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 128m
+    pids_limit: 100

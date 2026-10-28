@@ -204,7 +204,8 @@ def main():
         for row in tunable[:TOP_K_TO_TUNE]:
             name, engineered = row["model"], row["engineered"]
 
-            def objective(trial):
+            # name and engineered are bound as defaults, so each trial uses this loop round's values
+            def objective(trial, name=name, engineered=engineered):
                 params = suggest_params(trial, name)
                 return cv_score(name, engineered, params, X_train, y_train, cv)["cv_rmse"]
 

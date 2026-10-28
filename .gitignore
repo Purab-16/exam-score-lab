@@ -19,8 +19,11 @@ env/
 mlflow.db
 mlruns/
 
-# Test caches
+# Test and checking tool caches
 .pytest_cache/
+.ruff_cache/
+.hypothesis/
+.schemathesis/
 
 # Secrets and local env files
 .env

@@ -1,0 +1,18 @@
+# Python linter settings (CI runs `ruff check .`).
+# It looks for real bugs, not style: syntax errors, undefined names, unused imports and variables,
+# and patterns that tend to hide bugs. Formatting and line length are not checked.
+
+extend-exclude = ["web", "notebooks", "mlruns"]
+
+[lint]
+select = [
+    "E4",  # import mistakes
+    "E7",  # statement mistakes (for example comparing to None with ==)
+    "E9",  # syntax and runtime errors
+    "F",   # pyflakes: undefined names, unused imports and variables
+    "B",   # bugbear: patterns that tend to hide bugs
+]
+
+[lint.flake8-bugbear]
+# FastAPI's way of declaring an upload or a dependency is a call in the argument default
+extend-immutable-calls = ["fastapi.File", "fastapi.Depends", "fastapi.Query", "fastapi.Body"]

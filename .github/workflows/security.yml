@@ -1,0 +1,109 @@
+name: Security
+
+# Checks for known vulnerabilities, secrets and bugs. It is separate from ci.yml, so a new advisory
+# in a library does not stop the build and test jobs. It also runs every Monday, so new advisories
+# are found even when nobody pushes. Every tool is pinned to the version it was tested with.
+#
+# To switch a job off without deleting it: add `if: false` under the job.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-code:
+    name: Python code (ruff, bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: pip install ruff==0.17.3 bandit==1.9.4
+      - run: ruff check .
+      - run: bandit -r api ml train.py -q
+
+  python-dependencies:
+    name: Python dependencies (pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: python -m pip install --upgrade pip
+      - run: pip install pip-audit==2.10.1
+      # Resolves every dependency of requirements.txt, not only the pinned ones
+      - run: pip-audit -r requirements.txt
+
+  web-dependencies:
+    name: Web dependencies (npm audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Runtime dependencies only. Fails on HIGH or worse. The low findings in the build-time shadcn CLI are accepted.
+      - run: npm audit --package-lock-only --omit=dev --audit-level=high
+        working-directory: web
+
+  secrets:
+    name: Secrets (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 dir /repo --redact --no-banner --exit-code 1
+
+  images:
+    name: Docker images (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose build
+      - run: docker compose -f docker-compose.yml -f docker-compose.proxy.yml build
+      - name: Scan every image of both setups
+        run: |
+          images=$( (docker compose config --images; docker compose -f docker-compose.yml -f docker-compose.proxy.yml config --images) | sort -u)
+          status=0
+          for image in $images; do
+            echo "=== $image"
+            # Only HIGH and CRITICAL findings that already have a fix. Findings without a fix cannot be acted on.
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$HOME/.cache/trivy:/root/.cache" \
+              aquasec/trivy:0.76.1 image --severity HIGH,CRITICAL --ignore-unfixed --scanners vuln --exit-code 1 "$image" || status=1
+          done
+          exit $status
+
+  api-fuzzing:
+    name: API fuzzing (schemathesis)
+    runs-on: ubuntu-latest
+    env:
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: pip install -r requirements-api.txt schemathesis==4.32.7
+      - name: Start the API and fuzz it from its OpenAPI file
+        run: |
+          RATE_LIMIT_ENABLED=false API_ENV=production uvicorn api.main:app --port 8000 --no-server-header &
+          for _ in $(seq 1 60); do curl -fs http://127.0.0.1:8000/health && break; sleep 1; done
+          curl -fs http://127.0.0.1:8000/health || { echo "The API did not start"; exit 1; }
+          # A fixed seed on pushes and pull requests, so a run can be repeated. A new seed every week.
+          schemathesis run api/openapi.json --url http://127.0.0.1:8000 \
+            --seed ${{ github.event_name == 'schedule' && github.run_id || '1' }} \
+            --exclude-checks positive_data_acceptance --request-timeout 15
+          # positive_data_acceptance is skipped on purpose: the allowed category values come from the
+          # dataset when the API starts, which an OpenAPI file cannot express (GET /meta lists them).

@@ -2,7 +2,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
-from conftest import ROOT
 
 
 @pytest.fixture(scope="module")

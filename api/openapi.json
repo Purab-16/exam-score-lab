@@ -1,0 +1,1327 @@
+{
+  "components": {
+    "schemas": {
+      "BatchResponse": {
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "rows": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/BatchSummary"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "columns",
+          "rows",
+          "summary",
+          "warnings"
+        ],
+        "title": "BatchResponse",
+        "type": "object"
+      },
+      "BatchSummary": {
+        "properties": {
+          "below_50": {
+            "title": "Below 50",
+            "type": "integer"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "mean_score": {
+            "title": "Mean Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "count",
+          "mean_score",
+          "below_50"
+        ],
+        "title": "BatchSummary",
+        "type": "object"
+      },
+      "Body_predict_batch_predict_batch_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_predict_batch_predict_batch_post",
+        "type": "object"
+      },
+      "CategoricalSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          }
+        },
+        "required": [
+          "label",
+          "options"
+        ],
+        "title": "CategoricalSpec",
+        "type": "object"
+      },
+      "CategoryMean": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "mean": {
+            "title": "Mean",
+            "type": "number"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "mean",
+          "count"
+        ],
+        "title": "CategoryMean",
+        "type": "object"
+      },
+      "Correlation": {
+        "additionalProperties": false,
+        "properties": {
+          "feature": {
+            "enum": [
+              "age",
+              "gender",
+              "study_hours_per_day",
+              "social_media_hours",
+              "netflix_hours",
+              "part_time_job",
+              "attendance_percentage",
+              "sleep_hours",
+              "diet_quality",
+              "exercise_frequency",
+              "parental_education_level",
+              "internet_quality",
+              "mental_health_rating",
+              "extracurricular_participation"
+            ],
+            "title": "Feature",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "r": {
+            "title": "R",
+            "type": "number"
+          }
+        },
+        "required": [
+          "feature",
+          "label",
+          "r"
+        ],
+        "title": "Correlation",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ValidationIssue"
+                    }
+                  ]
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "HabitSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "feature": {
+            "enum": [
+              "age",
+              "gender",
+              "study_hours_per_day",
+              "social_media_hours",
+              "netflix_hours",
+              "part_time_job",
+              "attendance_percentage",
+              "sleep_hours",
+              "diet_quality",
+              "exercise_frequency",
+              "parental_education_level",
+              "internet_quality",
+              "mental_health_rating",
+              "extracurricular_participation"
+            ],
+            "title": "Feature",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "feature",
+          "label"
+        ],
+        "title": "HabitSpec",
+        "type": "object"
+      },
+      "HistogramBin": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "end": {
+            "title": "End",
+            "type": "number"
+          },
+          "start": {
+            "title": "Start",
+            "type": "number"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "count"
+        ],
+        "title": "HistogramBin",
+        "type": "object"
+      },
+      "InsightsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "category_means": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/CategoryMean"
+              },
+              "type": "array"
+            },
+            "title": "Category Means",
+            "type": "object"
+          },
+          "correlations": {
+            "items": {
+              "$ref": "#/components/schemas/Correlation"
+            },
+            "title": "Correlations",
+            "type": "array"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "histogram": {
+            "items": {
+              "$ref": "#/components/schemas/HistogramBin"
+            },
+            "title": "Histogram",
+            "type": "array"
+          },
+          "predicted_vs_actual": {
+            "items": {
+              "$ref": "#/components/schemas/PredictedActual"
+            },
+            "title": "Predicted Vs Actual",
+            "type": "array"
+          },
+          "scatter": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/Point"
+              },
+              "type": "array"
+            },
+            "title": "Scatter",
+            "type": "object"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ScoreSummary"
+          }
+        },
+        "required": [
+          "count",
+          "summary",
+          "histogram",
+          "correlations",
+          "category_means",
+          "scatter",
+          "predicted_vs_actual"
+        ],
+        "title": "InsightsResponse",
+        "type": "object"
+      },
+      "Interval": {
+        "properties": {
+          "high": {
+            "title": "High",
+            "type": "number"
+          },
+          "level": {
+            "title": "Level",
+            "type": "number"
+          },
+          "low": {
+            "title": "Low",
+            "type": "number"
+          }
+        },
+        "required": [
+          "low",
+          "high",
+          "level"
+        ],
+        "title": "Interval",
+        "type": "object"
+      },
+      "IntervalInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "half_width": {
+            "title": "Half Width",
+            "type": "number"
+          },
+          "level": {
+            "title": "Level",
+            "type": "number"
+          }
+        },
+        "required": [
+          "level",
+          "half_width"
+        ],
+        "title": "IntervalInfo",
+        "type": "object"
+      },
+      "MetaResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "categorical": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CategoricalSpec"
+            },
+            "title": "Categorical",
+            "type": "object"
+          },
+          "diet_order": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Diet Order",
+            "type": "array"
+          },
+          "features": {
+            "items": {
+              "enum": [
+                "age",
+                "gender",
+                "study_hours_per_day",
+                "social_media_hours",
+                "netflix_hours",
+                "part_time_job",
+                "attendance_percentage",
+                "sleep_hours",
+                "diet_quality",
+                "exercise_frequency",
+                "parental_education_level",
+                "internet_quality",
+                "mental_health_rating",
+                "extracurricular_participation"
+              ],
+              "type": "string"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "habits": {
+            "items": {
+              "$ref": "#/components/schemas/HabitSpec"
+            },
+            "title": "Habits",
+            "type": "array"
+          },
+          "max_batch_rows": {
+            "title": "Max Batch Rows",
+            "type": "integer"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelInfo"
+          },
+          "numeric": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/NumericSpec"
+            },
+            "title": "Numeric",
+            "type": "object"
+          }
+        },
+        "required": [
+          "model",
+          "features",
+          "numeric",
+          "categorical",
+          "habits",
+          "diet_order",
+          "max_batch_rows"
+        ],
+        "title": "MetaResponse",
+        "type": "object"
+      },
+      "ModelInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "interval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IntervalInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "sklearn_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sklearn Version"
+          },
+          "sklearn_version_matches": {
+            "title": "Sklearn Version Matches",
+            "type": "boolean"
+          },
+          "test_metrics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TestMetrics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trained_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trained At"
+          },
+          "tuned": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tuned"
+          }
+        },
+        "required": [
+          "name",
+          "tuned",
+          "trained_at",
+          "test_metrics",
+          "interval",
+          "sklearn_version",
+          "sklearn_version_matches"
+        ],
+        "title": "ModelInfo",
+        "type": "object"
+      },
+      "NumericSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "integer": {
+            "title": "Integer",
+            "type": "boolean"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "max": {
+            "title": "Max",
+            "type": "number"
+          },
+          "median": {
+            "title": "Median",
+            "type": "number"
+          },
+          "min": {
+            "title": "Min",
+            "type": "number"
+          },
+          "step": {
+            "title": "Step",
+            "type": "number"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "unit",
+          "integer",
+          "step",
+          "min",
+          "max",
+          "median"
+        ],
+        "title": "NumericSpec",
+        "type": "object"
+      },
+      "Point": {
+        "additionalProperties": false,
+        "properties": {
+          "x": {
+            "title": "X",
+            "type": "number"
+          },
+          "y": {
+            "title": "Y",
+            "type": "number"
+          }
+        },
+        "required": [
+          "x",
+          "y"
+        ],
+        "title": "Point",
+        "type": "object"
+      },
+      "PredictResponse": {
+        "properties": {
+          "edge_features": {
+            "items": {
+              "enum": [
+                "age",
+                "gender",
+                "study_hours_per_day",
+                "social_media_hours",
+                "netflix_hours",
+                "part_time_job",
+                "attendance_percentage",
+                "sleep_hours",
+                "diet_quality",
+                "exercise_frequency",
+                "parental_education_level",
+                "internet_quality",
+                "mental_health_rating",
+                "extracurricular_participation"
+              ],
+              "type": "string"
+            },
+            "title": "Edge Features",
+            "type": "array"
+          },
+          "interval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Interval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "score": {
+            "title": "Score",
+            "type": "number"
+          },
+          "tips": {
+            "items": {
+              "$ref": "#/components/schemas/Tip"
+            },
+            "title": "Tips",
+            "type": "array"
+          }
+        },
+        "required": [
+          "score",
+          "interval",
+          "edge_features",
+          "tips"
+        ],
+        "title": "PredictResponse",
+        "type": "object"
+      },
+      "PredictedActual": {
+        "additionalProperties": false,
+        "properties": {
+          "actual": {
+            "title": "Actual",
+            "type": "number"
+          },
+          "predicted": {
+            "title": "Predicted",
+            "type": "number"
+          }
+        },
+        "required": [
+          "actual",
+          "predicted"
+        ],
+        "title": "PredictedActual",
+        "type": "object"
+      },
+      "ScoreSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "max": {
+            "title": "Max",
+            "type": "number"
+          },
+          "mean": {
+            "title": "Mean",
+            "type": "number"
+          },
+          "median": {
+            "title": "Median",
+            "type": "number"
+          },
+          "min": {
+            "title": "Min",
+            "type": "number"
+          },
+          "std": {
+            "title": "Std",
+            "type": "number"
+          }
+        },
+        "required": [
+          "mean",
+          "median",
+          "std",
+          "min",
+          "max"
+        ],
+        "title": "ScoreSummary",
+        "type": "object"
+      },
+      "Student": {
+        "additionalProperties": false,
+        "description": "One student's profile. Categorical values must match GET /meta options.",
+        "example": {
+          "age": 20,
+          "attendance_percentage": 84.0,
+          "diet_quality": "Fair",
+          "exercise_frequency": 3,
+          "extracurricular_participation": "No",
+          "gender": "Female",
+          "internet_quality": "Average",
+          "mental_health_rating": 5,
+          "netflix_hours": 1.8,
+          "parental_education_level": "Bachelor",
+          "part_time_job": "No",
+          "sleep_hours": 6.5,
+          "social_media_hours": 2.5,
+          "study_hours_per_day": 3.5
+        },
+        "properties": {
+          "age": {
+            "maximum": 100.0,
+            "minimum": 10.0,
+            "title": "Age",
+            "type": "integer"
+          },
+          "attendance_percentage": {
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Attendance Percentage",
+            "type": "number"
+          },
+          "diet_quality": {
+            "maxLength": 40,
+            "title": "Diet Quality",
+            "type": "string"
+          },
+          "exercise_frequency": {
+            "maximum": 7.0,
+            "minimum": 0.0,
+            "title": "Exercise Frequency",
+            "type": "integer"
+          },
+          "extracurricular_participation": {
+            "maxLength": 40,
+            "title": "Extracurricular Participation",
+            "type": "string"
+          },
+          "gender": {
+            "maxLength": 40,
+            "title": "Gender",
+            "type": "string"
+          },
+          "internet_quality": {
+            "maxLength": 40,
+            "title": "Internet Quality",
+            "type": "string"
+          },
+          "mental_health_rating": {
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Mental Health Rating",
+            "type": "integer"
+          },
+          "netflix_hours": {
+            "maximum": 24.0,
+            "minimum": 0.0,
+            "title": "Netflix Hours",
+            "type": "number"
+          },
+          "parental_education_level": {
+            "maxLength": 40,
+            "title": "Parental Education Level",
+            "type": "string"
+          },
+          "part_time_job": {
+            "maxLength": 40,
+            "title": "Part Time Job",
+            "type": "string"
+          },
+          "sleep_hours": {
+            "maximum": 24.0,
+            "minimum": 0.0,
+            "title": "Sleep Hours",
+            "type": "number"
+          },
+          "social_media_hours": {
+            "maximum": 24.0,
+            "minimum": 0.0,
+            "title": "Social Media Hours",
+            "type": "number"
+          },
+          "study_hours_per_day": {
+            "maximum": 24.0,
+            "minimum": 0.0,
+            "title": "Study Hours Per Day",
+            "type": "number"
+          }
+        },
+        "required": [
+          "age",
+          "gender",
+          "study_hours_per_day",
+          "social_media_hours",
+          "netflix_hours",
+          "part_time_job",
+          "attendance_percentage",
+          "sleep_hours",
+          "diet_quality",
+          "exercise_frequency",
+          "parental_education_level",
+          "internet_quality",
+          "mental_health_rating",
+          "extracurricular_participation"
+        ],
+        "title": "Student",
+        "type": "object"
+      },
+      "TestMetrics": {
+        "additionalProperties": false,
+        "properties": {
+          "clipped_predictions": {
+            "title": "Clipped Predictions",
+            "type": "integer"
+          },
+          "interval_coverage": {
+            "title": "Interval Coverage",
+            "type": "number"
+          },
+          "r2": {
+            "title": "R2",
+            "type": "number"
+          },
+          "rmse": {
+            "title": "Rmse",
+            "type": "number"
+          }
+        },
+        "required": [
+          "rmse",
+          "r2",
+          "interval_coverage",
+          "clipped_predictions"
+        ],
+        "title": "TestMetrics",
+        "type": "object"
+      },
+      "Tip": {
+        "properties": {
+          "current": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Current"
+          },
+          "feature": {
+            "enum": [
+              "age",
+              "gender",
+              "study_hours_per_day",
+              "social_media_hours",
+              "netflix_hours",
+              "part_time_job",
+              "attendance_percentage",
+              "sleep_hours",
+              "diet_quality",
+              "exercise_frequency",
+              "parental_education_level",
+              "internet_quality",
+              "mental_health_rating",
+              "extracurricular_participation"
+            ],
+            "title": "Feature",
+            "type": "string"
+          },
+          "gain": {
+            "title": "Gain",
+            "type": "number"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "suggested": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Suggested"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "feature",
+          "label",
+          "current",
+          "suggested",
+          "unit",
+          "gain"
+        ],
+        "title": "Tip",
+        "type": "object"
+      },
+      "ValidationIssue": {
+        "additionalProperties": true,
+        "properties": {
+          "input": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Loc",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Msg",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "loc",
+          "msg"
+        ],
+        "title": "ValidationIssue",
+        "type": "object"
+      },
+      "WhatIfRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "changes": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Feature name to new value, e.g. {\"study_hours_per_day\": 5}",
+            "maxProperties": 14,
+            "title": "Changes",
+            "type": "object"
+          },
+          "student": {
+            "$ref": "#/components/schemas/Student"
+          }
+        },
+        "required": [
+          "student",
+          "changes"
+        ],
+        "title": "WhatIfRequest",
+        "type": "object"
+      },
+      "WhatIfResponse": {
+        "properties": {
+          "base_score": {
+            "title": "Base Score",
+            "type": "number"
+          },
+          "delta": {
+            "title": "Delta",
+            "type": "number"
+          },
+          "interval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Interval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "new_score": {
+            "title": "New Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "base_score",
+          "new_score",
+          "delta",
+          "interval"
+        ],
+        "title": "WhatIfResponse",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Student Exam Score API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    },
+    "/insights": {
+      "get": {
+        "operationId": "insights_insights_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InsightsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too many requests. See the Retry-After header."
+          }
+        },
+        "summary": "Insights"
+      }
+    },
+    "/meta": {
+      "get": {
+        "operationId": "meta_meta_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetaResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too many requests. See the Retry-After header."
+          }
+        },
+        "summary": "Meta"
+      }
+    },
+    "/predict": {
+      "post": {
+        "operationId": "predict_predict_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Student"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request body could not be read, for example it is not valid text."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request body is too large."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too many requests. See the Retry-After header."
+          }
+        },
+        "summary": "Predict"
+      }
+    },
+    "/predict/batch": {
+      "post": {
+        "operationId": "predict_batch_predict_batch_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_predict_batch_predict_batch_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request body could not be read, for example it is not valid text."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request body is too large."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too many requests. See the Retry-After header."
+          }
+        },
+        "summary": "Predict Batch"
+      }
+    },
+    "/template.csv": {
+      "get": {
+        "operationId": "template_csv_template_csv_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too many requests. See the Retry-After header."
+          }
+        },
+        "summary": "Template Csv"
+      }
+    },
+    "/what-if": {
+      "post": {
+        "operationId": "what_if_route_what_if_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WhatIfRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatIfResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request body could not be read, for example it is not valid text."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request body is too large."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request is not valid."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too many requests. See the Retry-After header."
+          }
+        },
+        "summary": "What If Route"
+      }
+    }
+  }
+}

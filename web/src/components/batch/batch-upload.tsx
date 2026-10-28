@@ -8,6 +8,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { predictBatch, templateUrl, type BatchResult } from "@/lib/api";
+import { toCsv } from "@/lib/csv";
 import { scoreBand } from "@/lib/format";
 import { useMeta } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
@@ -15,14 +16,6 @@ import { cn } from "@/lib/utils";
 const PREVIEW_ROWS = 50;
 // Columns shown first in the preview table, when present
 const PREVIEW_COLUMNS = ["student_id", "predicted_score", "range_low", "range_high", "study_hours_per_day", "attendance_percentage", "sleep_hours"];
-
-function toCsv(result: BatchResult) {
-  const escape = (v: unknown) => {
-    const s = v == null ? "" : String(v);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  };
-  return [result.columns.join(","), ...result.rows.map((r) => result.columns.map((c) => escape(r[c])).join(","))].join("\n");
-}
 
 export function BatchUpload() {
   const { data: meta } = useMeta();
@@ -48,7 +41,7 @@ export function BatchUpload() {
 
   function download() {
     if (!result) return;
-    const url = URL.createObjectURL(new Blob([toCsv(result)], { type: "text/csv" }));
+    const url = URL.createObjectURL(new Blob([toCsv(result.columns, result.rows)], { type: "text/csv" }));
     const a = Object.assign(document.createElement("a"), { href: url, download: "predictions.csv" });
     a.click();
     URL.revokeObjectURL(url);

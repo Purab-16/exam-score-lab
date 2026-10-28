@@ -84,7 +84,9 @@ Three pages, with light and dark mode and a mobile layout:
 | 📂 **Batch** (`/batch`) | Drag and drop a CSV of students, see row-level errors or validated predictions with ranges, download the results. A template CSV is provided. |
 | 📊 **Insights** (`/insights`) | Interactive charts: score distribution, correlation of each habit with the score, habit vs score scatter, average score by group, and predicted vs actual. |
 
-Tips use SHAP values to find which habits pull a student's score below average, then use the model to estimate the effect of one realistic change. They show association, not guaranteed cause and effect.
+Tips find which habits pull a student's score below average (each habit's contribution compared with the average student), then use the model to estimate the effect of one realistic change. They show association, not guaranteed cause and effect.
+
+For a linear model (the current Ridge) the contributions come from an exact formula, `coefficient * (value - average value)`, which equals SHAP over all training rows and needs no extra package. If `train.py` ever picks a tree model, the API uses SHAP instead, and `shap` must then be added to `requirements-api.txt` (a test checks this).
 
 ### Batch CSV format
 
@@ -153,6 +155,36 @@ The web app calls the API at `NEXT_PUBLIC_API_URL` (default `http://127.0.0.1:80
 | GET | `/template.csv` | Example CSV for batch upload |
 | GET | `/insights` | Data for the dataset charts |
 
+#### API protections and settings
+
+Every protection has a switch, so one that misbehaves can be turned off without a code change. Set them as environment variables (in Docker: under `environment:` in `docker-compose.yml`). Defaults are the safe choice. The full list is in `api/settings.py`.
+
+| What it does | Setting (default) |
+|---|---|
+| Hides `/docs`, `/redoc` and `/openapi.json` when set to `production` | `API_ENV` (`development`; the Docker image uses `production`) |
+| Security headers on every response (`nosniff`, frame, referrer, CSP) | `SECURITY_HEADERS_ENABLED` (`true`) |
+| Gzip for responses over 1 KB (`/insights` goes from 191 KB to 33 KB) | `GZIP_ENABLED` (`true`) |
+| `ETag` and `Cache-Control` (5 minutes) on `/meta`, `/insights`, `/template.csv`, with `304` support | `CACHE_HEADERS_ENABLED` (`true`) |
+| Rejects oversized bodies with `413` before parsing them | `BODY_LIMIT_ENABLED` (`true`), `MAX_UPLOAD_MB` (`5`) |
+| Per-client request limits, answered with `429` and `Retry-After` | `RATE_LIMIT_ENABLED` (`true`), `RATE_LIMIT_PREDICT` (`60/minute`), `RATE_LIMIT_WHAT_IF` (`120/minute`), `RATE_LIMIT_BATCH` (`6/minute`), `RATE_LIMIT_DEFAULT` (`120/minute`, every other route except `/health`) |
+| Unknown request fields, and `true`/`false` or text in a number field, give `422` instead of being converted | `STRICT_INPUT` (`true`) |
+| How tips are explained: exact formula for linear models, SHAP otherwise (`shap` forces SHAP and needs the package) | `EXPLAINER` (`auto`) |
+| Browser origins allowed to call the API | `API_CORS_ORIGINS` |
+
+Limits are counted in memory per client address and per route, so they reset when the API restarts and are per process.
+
+#### Web security settings
+
+The web app sends security headers (`X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, `Strict-Transport-Security` and a Content Security Policy) and does not announce `X-Powered-By`. They are set in `web/next.config.ts` when the app is **built**, so they are build settings. With Docker: `CSP_MODE=report-only docker compose up --build`.
+
+| Setting | Values (default) | Meaning |
+|---|---|---|
+| `CSP_MODE` | `enforce`, `report-only`, `off` (`enforce`; `next dev` uses `report-only`) | `report-only` only reports problems in the browser console and blocks nothing. Use it first if you change the policy |
+| `HSTS_MAX_AGE` | seconds (`86400`) | `0` turns it off. Kept short on purpose, browsers remember it. Raise it once HTTPS works everywhere |
+| `WEB_SECURITY_HEADERS` | `true`, `false` (`true`) | `false` removes all of the above |
+
+The policy allows the site itself and the API origin from `NEXT_PUBLIC_API_URL`, and blocks other sites, plugins and framing. It still allows inline scripts, because Next.js and the theme switch need them, and a stricter policy would force every page to render on each request.
+
 ### Or run everything with Docker
 
 Needs Docker Desktop (or Docker Engine) running.
@@ -161,19 +193,66 @@ Needs Docker Desktop (or Docker Engine) running.
 docker compose up --build
 ```
 
-Web: http://localhost:3000 · API: http://localhost:8000/docs
+Web: http://localhost:3000 · API: http://localhost:8000
+
+The API docs pages are off in Docker (`API_ENV=production`). To see them: `API_ENV=development docker compose up --build`, then open http://localhost:8000/docs.
 
 - `api/Dockerfile` installs only `requirements-api.txt` (no training tools), runs as a non-root user and reads `PORT` if the host sets it.
-- `web/Dockerfile` builds a Next.js standalone server. `NEXT_PUBLIC_API_URL` is a build argument because it is baked into the browser bundle.
+- `web/Dockerfile` builds a Next.js standalone server. `NEXT_PUBLIC_API_URL` is a build argument because it is baked into the browser bundle. npm, npx and yarn are removed from the final image.
+- Both containers have a read-only file system, no extra Linux capabilities, `no-new-privileges`, and limits on memory (512 MB) and processes. Only `/tmp` (and Next.js's cache) can be written, in memory.
+
+#### Behind an nginx reverse proxy
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.proxy.yml up --build
+```
+
+Open http://localhost:8080 (the API is at `/api/`). The web and API ports are not published, so every request goes through nginx, which adds request and size limits, a 5-minute cache for the static API answers, gzip and JSON error answers. The browser only talks to one address, so there is no CORS and the Content Security Policy is just `'self'`. This runs next to the direct setup above and does not replace it. Details, a template for HTTPS and notes for running behind a CDN: `nginx/README.md`.
 
 ### 4. Run the tests
 
 ```bash
-python -m pytest            # 50 Python tests: pipeline, saved model, insights, API, requirement pins
-cd web && npm run lint && npm run build
+python -m pytest            # 143 Python tests: pipeline, saved model, insights, API, API protections, API contract, requirement pins
+cd web && npm test && npm run lint && npx tsc --noEmit && npm run build
 ```
 
-GitHub Actions (`.github/workflows/ci.yml`) runs the Python tests, the web lint, type check and build, and then builds both Docker images and smoke-tests the stack, on every push to `main` and every pull request.
+### Keep the API and the web app in sync
+
+The web app's API types are generated from the API, so a change in the API shows up as a type error instead of a bug in the browser. After you change an endpoint or a request or response model in `api/`:
+
+```bash
+python -m api.export_openapi      # project root: writes api/openapi.json
+cd web && npm run gen:api         # writes web/src/lib/api-types.ts
+```
+
+A test fails if `api/openapi.json` is out of date, and CI fails if `web/src/lib/api-types.ts` is.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs the Python tests, the web tests, lint, type check and build, and then builds the Docker images and smoke-tests the stack, directly and behind nginx, on every push to `main` and every pull request.
+
+#### Security checks
+
+A second workflow, `.github/workflows/security.yml`, runs on every push, every pull request and every Monday. It is separate so that a new advisory in a library does not stop the build. Every tool is pinned to the version it was tested with.
+
+| Job | Tool | Fails on |
+|---|---|---|
+| Python code | `ruff`, `bandit` | Likely bugs (undefined names, unused code, bug-prone patterns), security-lint findings |
+| Python dependencies | `pip-audit` | Any known vulnerability in `requirements.txt` or what it installs |
+| Web dependencies | `npm audit` | HIGH or worse in runtime dependencies |
+| Secrets | `gitleaks` | A key, token or password in the files |
+| Docker images | `trivy` | HIGH or CRITICAL findings that have a fix, in every image of both setups |
+| API fuzzing | `schemathesis` | The API answering something its OpenAPI file does not describe, or a server error |
+
+`.github/dependabot.yml` opens weekly pull requests for libraries, base images and Actions. It skips `scikit-learn`, `numpy`, `pandas` and `joblib`, because the saved model only loads with the versions it was trained with: update those by hand together with `python train.py`.
+
+The same checks locally (from the project root):
+
+```bash
+pip install ruff==0.17.3 bandit==1.9.4 pip-audit==2.10.1
+ruff check .
+bandit -r api ml train.py -q
+pip-audit -r requirements.txt
+(cd web && npm audit --omit=dev --audit-level=high)
+```
 
 ### 5. View experiments (optional)
 
@@ -195,7 +274,7 @@ Then open http://127.0.0.1:5000.
 ├── ml/                          # the model code (no web or API code)
 │   ├── pipeline.py              #   features, preprocessing, clipping
 │   ├── train.py                 #   CV, tuning, interval, MLflow, saves the model
-│   ├── insights.py              #   ranges, what-if, tips, SHAP, CSV validation
+│   ├── insights.py              #   ranges, what-if, tips, CSV validation
 │   └── paths.py                 #   where data and model files live
 ├── data/
 │   └── student_habits_performance.csv
@@ -204,17 +283,25 @@ Then open http://127.0.0.1:5000.
 │   └── model_meta.json          #   versions, CV leaderboard, test metrics, interval
 ├── notebooks/
 │   └── eda.ipynb                # exploratory analysis only
-├── api/                         # FastAPI service (main.py, schemas.py, Dockerfile)
+├── api/                         # FastAPI service: main.py (routes), settings.py, middleware.py,
+│                                #   schemas.py, export_openapi.py, openapi.json, Dockerfile
 ├── web/                         # Next.js app (src/app pages, src/components, src/lib/api.ts)
 ├── tests/                       # pytest suite
 ├── docs/
 │   └── PLAN.md                  # fix and improvement roadmap
 ├── train.py                     # shortcut so `python train.py` works (runs ml/train.py)
-├── docker-compose.yml           # API + web together
+├── docker-compose.yml           # API + web together (hardened containers)
+├── docker-compose.proxy.yml     # the same behind an nginx reverse proxy (override file)
+├── nginx/                       # proxy config, Dockerfile, HTTPS template, notes
 ├── requirements.txt             # everything: training, API, tests
 ├── requirements-api.txt         # API runtime only (used by the Docker image)
 ├── pytest.ini
-└── .github/workflows/ci.yml     # CI
+├── ruff.toml                    # Python linter settings
+├── .claude/                     # Claude Code settings: asks before any git command (optional)
+└── .github/
+    ├── workflows/ci.yml         #   tests, build, Docker smoke tests
+    ├── workflows/security.yml   #   vulnerability, secret and fuzzing checks
+    └── dependabot.yml           #   weekly update pull requests
 ```
 
 Where to look when you want to:

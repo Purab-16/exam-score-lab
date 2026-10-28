@@ -1,0 +1,58 @@
+# Weekly pull requests for out-of-date libraries, base images and GitHub Actions.
+# They are only pull requests: CI runs on them and nothing is merged by itself.
+
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    ignore:
+      # The saved model (models/best_model.pkl) only loads with the scikit-learn version it was trained
+      # with, and numpy, pandas and joblib come with it. Update them by hand, together with retraining
+      # (python train.py), and keep requirements.txt and requirements-api.txt equal (a test checks this).
+      - dependency-name: "scikit-learn"
+      - dependency-name: "numpy"
+      - dependency-name: "pandas"
+      - dependency-name: "joblib"
+    groups:
+      python-minor-and-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: npm
+    directory: "/web"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      web-minor-and-patch:
+        update-types: ["minor", "patch"]
+
+  # Base images in the Dockerfiles (python, node, nginx)
+  - package-ecosystem: docker
+    directories:
+      - "/api"
+      - "/web"
+      - "/nginx"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+
+  # Image tags in the compose files
+  - package-ecosystem: docker-compose
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3

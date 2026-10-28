@@ -20,7 +20,15 @@ def test_api_requirements_match_main_requirements():
     assert not mismatched, f"requirements-api.txt differs from requirements.txt: {mismatched}"
 
 
+TREE_MODELS = {"random_forest", "gradient_boosting", "xgboost", "lightgbm"}
+
+
 def test_api_requirements_cover_the_saved_model(meta):
     api = _pins("requirements-api.txt")
-    needed = {"xgboost": "xgboost", "lightgbm": "lightgbm"}.get(meta["model"])
-    assert needed is None or needed in api, f"Model is {meta['model']}; add {needed} to requirements-api.txt"
+    needed = set()
+    if meta["model"] in ("xgboost", "lightgbm"):
+        needed.add(meta["model"])  # the model file needs its own library to load
+    if meta["model"] in TREE_MODELS:
+        needed.add("shap")  # tips for non-linear models are explained with SHAP
+    missing = needed - set(api)
+    assert not missing, f"Model is {meta['model']}; add {sorted(missing)} to requirements-api.txt"
