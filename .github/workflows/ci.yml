@@ -43,8 +43,9 @@ jobs:
           git diff --exit-code src/lib/api-types.ts
       - run: npm test
       - run: npm run lint
-      - run: npx tsc --noEmit
+      # The build comes first: it generates the Next.js route types (LayoutProps, PageProps) that tsc needs
       - run: npm run build
+      - run: npx tsc --noEmit
 
   docker:
     name: Docker images build
