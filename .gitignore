@@ -1,0 +1,43 @@
+# Python Cache Files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# IDE Configuration
+.vscode/
+.idea/
+
+# MLflow experiment tracking (local)
+mlflow.db
+mlruns/
+
+# Test caches
+.pytest_cache/
+
+# Secrets and local env files
+.env
+.env.*
+!.env.example
+
+# Claude Code: shared project settings and hooks are tracked, personal overrides are not
+.claude/settings.local.json
+
+# Third-party skills repository placed in the project root. Not part of this project.
+skills-main/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local Model Dumps
+# We keep best_model.pkl in tracked files, but ignore other temporary models if generated.
+# If you wish to ignore all .pkl files, uncomment the next line:
+# *.pkl

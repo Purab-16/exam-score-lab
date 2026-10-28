@@ -1,0 +1,18 @@
+# Build context for api/Dockerfile is the project root. Only these are needed:
+# requirements-api.txt, ml/ (runtime modules), models/, data/, api/
+.venv/
+venv/
+env/
+web/
+tests/
+docs/
+notebooks/
+.claude/
+.git/
+.github/
+mlruns/
+mlflow.db
+.ipynb_checkpoints/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/

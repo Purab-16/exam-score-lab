@@ -1,0 +1,109 @@
+{
+  "trained_at": "2026-10-28T00:32:44+00:00",
+  "python_version": "3.14.3",
+  "sklearn_version": "1.9.1",
+  "xgboost_version": "3.4.1",
+  "lightgbm_version": "4.7.0",
+  "pandas_version": "3.0.3",
+  "numpy_version": "2.4.6",
+  "model": "ridge",
+  "tuned": true,
+  "engineered_features": false,
+  "params": {
+    "alpha": 12.362038859503974
+  },
+  "features": [
+    "age",
+    "gender",
+    "study_hours_per_day",
+    "social_media_hours",
+    "netflix_hours",
+    "part_time_job",
+    "attendance_percentage",
+    "sleep_hours",
+    "diet_quality",
+    "exercise_frequency",
+    "parental_education_level",
+    "internet_quality",
+    "mental_health_rating",
+    "extracurricular_participation"
+  ],
+  "n_rows": 1000,
+  "n_train": 800,
+  "n_test": 200,
+  "cv": {
+    "folds": 5,
+    "rmse": 5.508105294533707,
+    "rmse_std": 0.48714866171377763,
+    "r2": 0.8947475910740461,
+    "r2_std": 0.01724464044663461
+  },
+  "cv_leaderboard": [
+    {
+      "model": "ridge",
+      "engineered": false,
+      "cv_rmse": 5.508105294533707,
+      "cv_r2": 0.8947475910740461,
+      "tuned": true
+    },
+    {
+      "model": "ridge",
+      "engineered": false,
+      "cv_rmse": 5.518063967119728,
+      "cv_r2": 0.8943581205492448,
+      "tuned": false
+    },
+    {
+      "model": "linear_regression",
+      "engineered": false,
+      "cv_rmse": 5.520019072866282,
+      "cv_r2": 0.8942829094760978,
+      "tuned": false
+    },
+    {
+      "model": "gradient_boosting",
+      "engineered": true,
+      "cv_rmse": 5.665035003049662,
+      "cv_r2": 0.8889823520884956,
+      "tuned": true
+    },
+    {
+      "model": "gradient_boosting",
+      "engineered": true,
+      "cv_rmse": 5.982219864954201,
+      "cv_r2": 0.8761645110523657,
+      "tuned": false
+    },
+    {
+      "model": "xgboost",
+      "engineered": false,
+      "cv_rmse": 6.117657226542421,
+      "cv_r2": 0.8702477476730582,
+      "tuned": false
+    },
+    {
+      "model": "lightgbm",
+      "engineered": true,
+      "cv_rmse": 6.166025713289953,
+      "cv_r2": 0.8683725257977416,
+      "tuned": false
+    },
+    {
+      "model": "random_forest",
+      "engineered": true,
+      "cv_rmse": 6.491313469499497,
+      "cv_r2": 0.8541042204393972,
+      "tuned": false
+    }
+  ],
+  "test_metrics": {
+    "rmse": 5.142628623711296,
+    "r2": 0.8968657239995311,
+    "interval_coverage": 0.915,
+    "clipped_predictions": 2
+  },
+  "interval": {
+    "level": 0.9,
+    "half_width": 8.600324455382175
+  }
+}
