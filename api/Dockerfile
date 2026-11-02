@@ -1,6 +1,6 @@
 # API image. Build from the project root:
 #   docker build -f api/Dockerfile -t exam-score-api .
-FROM python:3.14-slim
+FROM python:3.15-slim
 
 # API_ENV=production hides /docs, /redoc and /openapi.json. Override with -e API_ENV=development.
 # The other API settings and their defaults are listed in api/settings.py.
